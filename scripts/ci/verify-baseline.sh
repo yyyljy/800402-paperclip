@@ -22,7 +22,9 @@ done
 
 grep -q "APP_ENV" .env.example
 grep -q "local" docs/environment-contract.md
-grep -q "CMP-16" docs/release-controls.md
+grep -q "main" docs/release-controls.md
+grep -q "Service Checks" docs/release-controls.md
+grep -q "production" docs/release-controls.md
 grep -q "ownerRole" docs/secret-manifest.md
 
 echo "Repository baseline files verified."

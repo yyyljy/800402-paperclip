@@ -1,23 +1,30 @@
 # Release Controls
 
-The managed workspace now has a local git root, but the canonical upstream repository is still pending in [CMP-16](/CMP/issues/CMP-16). Remote-enforced release controls stay blocked until that decision lands.
+The canonical upstream repository is now attached at `https://github.com/yyyljy/800402-paperclip`, and `main` is the protected default branch for release promotion.
 
-## Controls To Apply Once The Remote Exists
+## Verified Default-Branch Controls
 
-- protect `main` as the default branch
-- require the `CI` workflow to pass before merge
-- require at least one code review on application changes
-- restrict direct pushes to platform owners or repository administrators
-- keep production promotion manual from a staging-validated artifact
+- active ruleset: `Default branch release controls`
+- target branch: the repository default branch (`main`)
+- required pull-request review count: 1
+- required review-thread resolution: enabled
+- required status checks:
+  - `Repository Baseline`
+  - `Service Checks`
+- history protections:
+  - force pushes blocked
+  - branch deletion blocked
+  - linear history required
+- bypass actors: none configured, so direct pushes to `main` stay blocked unless the ruleset is changed
 
-## Current Local Baseline
+## Environment Promotion Path
 
-- the repository includes a CI workflow skeleton
-- environment and secret contracts are documented in source control
-- service-check automation is wired to detect the first root-level Node skeleton without another workflow rewrite
+- `staging` exists as a GitHub Environment and accepts deployments from `main` only
+- `production` exists as a GitHub Environment, accepts protected branches only, and requires manual reviewer approval before deployment
+- production promotion should consume the staging-validated artifact from the protected branch rather than rebuilding a different commit
 
-## Remaining Remote-Dependent Steps
+## Deployment Identity Baseline
 
-- attach the canonical remote repository
-- enable branch protection and required checks on that remote
-- wire deployment identities and environment-scoped secrets in the chosen hosting platform
+- runtime environment names remain limited to `local`, `staging`, and `production` per `docs/environment-contract.md`
+- repository-level and environment-level GitHub secrets are intentionally empty in the scaffolded baseline
+- deployment identities and runtime credentials must be provisioned outside source control using the contract in `docs/environment-contract.md` and the ownership model in `docs/secret-manifest.md`
