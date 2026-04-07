@@ -1,6 +1,12 @@
 # `packages/design-tokens`
 
-Reserved for the semantic token source of truth.
+Semantic token source of truth for the onboarding workspace.
 
-The next token implementation issue should land the canonical TypeScript token
-object here and generate CSS variables plus machine-readable exports from it.
+Current contents:
+
+- `source.json`: canonical authored token source, including the default theme and breakpoints
+- `src/index.ts`: generated typed exports and flattened helpers
+- `src/tokens.css`: generated runtime CSS custom properties
+- `tokens.json`: generated machine-readable flattened token export
+
+Generate artifacts with `pnpm --filter @onboarding/design-tokens generate`.

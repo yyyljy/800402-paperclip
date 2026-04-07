@@ -1,6 +1,8 @@
 # `packages/ui-primitives`
 
-Reserved for shared presentational primitives.
+Shared presentational primitives for onboarding screens.
 
-Layer 1 and Layer 2 onboarding primitives should live here and consume the
-semantic token package rather than flow-specific styles.
+Current contents:
+
+- `src/index.tsx`: shared Layer 1 and Layer 2 React primitives
+- `src/primitives.css`: token-driven component styling for the shared shell, buttons, notices, fields, option cards, and review table

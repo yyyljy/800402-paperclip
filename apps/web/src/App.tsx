@@ -1,137 +1,430 @@
+import { useMemo, useRef, useState } from "react";
+import {
+  AppShell,
+  ChecklistGroup,
+  InlineNotice,
+  OptionCard,
+  PrimaryButton,
+  ReviewTable,
+  SecondaryButton,
+  SectionHeader,
+  StatusBadge,
+  StepRail,
+  type ChecklistItem,
+  type ReviewRow,
+  type StepRailItem,
+} from "@onboarding/ui-primitives";
 import { runtimeConfig } from "./runtime-config";
 
-const activeWorkspace = [
+const stepItems: StepRailItem[] = [
   {
-    name: "apps/web",
-    role: "Active runtime",
-    detail:
-      "Owns the onboarding shell, reference screens, and future browser-side composition for the shared token and primitive work.",
+    id: "capabilities",
+    label: "Capabilities",
+    description: "Choose the jobs this agent can handle.",
+    state: "current",
   },
   {
-    name: "packages/design-tokens",
-    role: "Queued shared package",
-    detail:
-      "Canonical token source for TypeScript exports and generated CSS variables. The next token task lands here.",
+    id: "details",
+    label: "Details",
+    description: "Add the connection details and runtime context.",
+    state: "upcoming",
   },
   {
-    name: "packages/ui-primitives",
-    role: "Queued shared package",
-    detail:
-      "Reusable presentational primitives that consume semantic tokens before flow-specific protocol cards exist.",
-  },
-];
-
-const deferredRuntimes = [
-  {
-    name: "apps/api",
-    boundary: "Future synchronous orchestration boundary",
-    detail:
-      "Reserved for validated form submission, durable state changes, and server-side integrations once real domain contracts exist.",
-  },
-  {
-    name: "apps/worker",
-    boundary: "Future async execution boundary",
-    detail:
-      "Reserved for retries, callbacks, long-running tasks, and non-blocking background processing.",
-  },
-  {
-    name: "apps/protocol-adapter",
-    boundary: "Future isolated signing/payment boundary",
-    detail:
-      "Reserved for signer, wallet, x402, and settlement operations that need the narrowest secret and network access.",
+    id: "review",
+    label: "Review",
+    description: "Confirm scope and activate the agent.",
+    state: "upcoming",
   },
 ];
 
-const reasons = [
-  "Current downstream work is token, primitive, and screen composition, so a web-first runtime unlocks the next three tickets immediately.",
-  "Protocol payload contracts are still being defined separately, so a placeholder API tier would add code ownership without stable inputs.",
-  "The repository baseline already reserves API, queue, wallet, and protocol environment namespaces, so later service separation does not require a layout reset.",
+const capabilityItems: ChecklistItem[] = [
+  {
+    value: "answer-questions",
+    label: "Answer questions",
+    description: "Respond to user or operator prompts using approved context.",
+  },
+  {
+    value: "draft-content",
+    label: "Draft content",
+    description: "Create first-pass copy, summaries, or structured responses for review.",
+  },
+  {
+    value: "trigger-workflows",
+    label: "Trigger workflows",
+    description: "Start approved actions in connected tools or internal systems.",
+  },
+  {
+    value: "read-system-data",
+    label: "Read system data",
+    description: "Pull the records or state this agent needs to complete a task.",
+  },
+  {
+    value: "send-updates",
+    label: "Send updates",
+    description: "Post status changes, alerts, or summaries back to your team.",
+  },
+  {
+    value: "use-external-tools",
+    label: "Use external tools",
+    description: "Call connected services to complete multi-step tasks.",
+  },
 ];
+
+const credentialOptions = [
+  {
+    value: "api-key",
+    label: "Use an API key",
+    description: "Best when this agent runs inside one trusted service.",
+  },
+  {
+    value: "webhook",
+    label: "Use a webhook",
+    description: "Best when another system should receive or approve each action.",
+  },
+];
+
+const stateBadgeTones = [
+  "info",
+  "success",
+  "warning",
+  "error",
+  "neutral",
+] as const;
+
+type NoticeTone = "warning" | "error";
+type BadgeTone = (typeof stateBadgeTones)[number];
+
+function getNoticeIcon(tone: NoticeTone) {
+  if (tone === "warning") {
+    return "!";
+  }
+
+  return "×";
+}
+
+type HelperState = {
+  accessReview: string;
+  badge: string;
+  badgeTone: BadgeTone;
+  footer: string;
+  title: string;
+  notice?: {
+    body: string;
+    title: string;
+    tone: NoticeTone;
+  };
+};
+
+function buildHelperState(
+  selectedCapabilities: string[],
+  selectedCredential: string | null,
+): HelperState {
+  const broadAccess =
+    selectedCapabilities.length >= 4 ||
+    selectedCapabilities.includes("use-external-tools");
+
+  if (selectedCapabilities.length === 0) {
+    return {
+      accessReview: "Waiting on required choices",
+      badge: "Waiting on scope",
+      badgeTone: "neutral",
+      title: "Select at least one capability",
+      footer: "Select at least one capability to continue.",
+    };
+  }
+
+  if (!selectedCredential) {
+    return {
+      accessReview: "Waiting on required choices",
+      badge: "Connection needed",
+      badgeTone: "info",
+      title: "Choose how this agent will connect",
+      footer: "Choose how this agent will connect before you continue.",
+    };
+  }
+
+  if (broadAccess) {
+    return {
+      accessReview: "Broad access warning",
+      badge: "Policy review recommended",
+      badgeTone: "warning",
+      title: "Broad access needs an extra check",
+      footer:
+        "This setup can act across multiple capabilities. Confirm that the selected access matches your internal policy.",
+      notice: {
+        body: "This setup can act across multiple capabilities. Confirm that the selected access matches your internal policy.",
+        title: "Broad access needs an extra check",
+        tone: "warning",
+      },
+    };
+  }
+
+  return {
+    accessReview: "Scoped access ready",
+    badge: "Step 1 ready",
+    badgeTone: "success",
+    title: "Scope ready",
+    footer: "Scope is ready. Continue to add connection details.",
+  };
+}
 
 export function App() {
+  const reviewRef = useRef<HTMLDivElement | null>(null);
+  const [selectedCapabilities, setSelectedCapabilities] = useState<string[]>([
+    "answer-questions",
+    "send-updates",
+  ]);
+  const [selectedCredential, setSelectedCredential] = useState<string | null>(
+    "api-key",
+  );
+
+  const capabilityLabels = useMemo(
+    () =>
+      capabilityItems
+        .filter((item) => selectedCapabilities.includes(item.value))
+        .map((item) => item.label),
+    [selectedCapabilities],
+  );
+
+  const helperState = buildHelperState(
+    selectedCapabilities,
+    selectedCredential,
+  );
+  const canContinue =
+    selectedCapabilities.length > 0 && selectedCredential !== null;
+  const selectedCredentialLabel =
+    credentialOptions.find((option) => option.value === selectedCredential)
+      ?.label ?? "Not selected";
+
+  const reviewRows: ReviewRow[] = [
+    {
+      label: "Selected capabilities",
+      value:
+        capabilityLabels.length > 0 ? capabilityLabels.join(", ") : "Not selected",
+    },
+    {
+      label: "Connection method",
+      value: selectedCredentialLabel,
+    },
+    {
+      label: "Access review",
+      value: helperState.accessReview,
+    },
+    {
+      label: "Next step",
+      value: "Add the connection details and runtime context.",
+    },
+  ];
+
+  function toggleCapability(value: string) {
+    setSelectedCapabilities((current) =>
+      current.includes(value)
+        ? current.filter((entry) => entry !== value)
+        : [...current, value],
+    );
+  }
+
   return (
-    <main className="page-shell">
-      <section className="hero-panel">
-        <p className="eyebrow">First executable application skeleton</p>
-        <div className="hero-copy">
+    <main className="app-page">
+      <div className="app-page__intro">
+        <p className="app-page__eyebrow">Onboarding v0 reference screen</p>
+        <div className="app-page__intro-grid">
           <div>
-            <h1>Web-first workspace, shared packages next.</h1>
-            <p className="lede">
-              The repository now runs from a single deployable web surface while
-              keeping explicit boundaries for the future API, worker, and
-              protocol adapter runtimes.
+            <h2>Shared primitives driving one real onboarding surface.</h2>
+            <p>
+              This reference composition uses semantic tokens and reusable
+              Layer 1 and Layer 2 primitives instead of screen-local styling.
             </p>
           </div>
-
-          <div className="runtime-card">
-            <span className="runtime-label">Runtime wiring</span>
-            <dl>
-              <div>
-                <dt>APP_ENV</dt>
-                <dd>{runtimeConfig.appEnv}</dd>
-              </div>
-              <div>
-                <dt>BASE_URL</dt>
-                <dd>{runtimeConfig.baseUrl}</dd>
-              </div>
-              <div>
-                <dt>API_BASE_URL</dt>
-                <dd>{runtimeConfig.apiBaseUrl}</dd>
-              </div>
-            </dl>
-          </div>
+          <dl className="runtime-card">
+            <div>
+              <dt>APP_ENV</dt>
+              <dd>{runtimeConfig.appEnv}</dd>
+            </div>
+            <div>
+              <dt>BASE_URL</dt>
+              <dd>{runtimeConfig.baseUrl}</dd>
+            </div>
+            <div>
+              <dt>API_BASE_URL</dt>
+              <dd>{runtimeConfig.apiBaseUrl}</dd>
+            </div>
+          </dl>
         </div>
-      </section>
+      </div>
 
-      <section className="content-grid">
-        <article className="panel">
-          <div className="section-heading">
-            <p className="eyebrow">Why this shape</p>
-            <h2>Start where the next milestone actually lives.</h2>
-          </div>
-          <ul className="stack-list">
-            {reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="panel">
-          <div className="section-heading">
-            <p className="eyebrow">Active workspace</p>
-            <h2>Directories that should move now.</h2>
-          </div>
-          <div className="card-stack">
-            {activeWorkspace.map((item) => (
-              <section key={item.name} className="boundary-card">
-                <div className="boundary-header">
-                  <h3>{item.name}</h3>
-                  <span>{item.role}</span>
-                </div>
-                <p>{item.detail}</p>
-              </section>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      <section className="panel">
-        <div className="section-heading">
-          <p className="eyebrow">Reserved boundaries</p>
-          <h2>Separated later, not guessed early.</h2>
-        </div>
-        <div className="card-grid">
-          {deferredRuntimes.map((item) => (
-            <section key={item.name} className="boundary-card">
-              <div className="boundary-header">
-                <h3>{item.name}</h3>
-                <span>{item.boundary}</span>
+      <AppShell
+        notice={
+          helperState.notice ? (
+            <InlineNotice
+              action={
+                <StatusBadge tone={helperState.badgeTone}>
+                  {helperState.badge}
+                </StatusBadge>
+              }
+              body={helperState.notice.body}
+              icon={
+                <span aria-hidden="true">
+                  {getNoticeIcon(helperState.notice.tone)}
+                </span>
+              }
+              title={helperState.notice.title}
+              tone={helperState.notice.tone}
+            />
+          ) : undefined
+        }
+        header={
+          <SectionHeader
+            description="Select the jobs this agent should handle, then choose how it will connect. You'll review the exact access before activation."
+            statusSlot={
+              <StatusBadge tone={helperState.badgeTone}>
+                {helperState.badge}
+              </StatusBadge>
+            }
+            stepLabel="Step 1 of 3"
+            title="Choose what this agent can do."
+          />
+        }
+        progress={<StepRail steps={stepItems} />}
+        main={
+          <div className="screen-stack">
+            <section className="screen-panel">
+              <div className="screen-panel__header">
+                <p className="screen-panel__eyebrow">Primary work area A</p>
+                <h3>Capability selection</h3>
+                <p>
+                  Start with the jobs this agent should be allowed to perform.
+                  Keep the first pass focused and add broader access only when
+                  it is operationally necessary.
+                </p>
               </div>
-              <p>{item.detail}</p>
+              <ChecklistGroup
+                description="Hide unsupported options instead of relabeling them. This starter pass keeps the checklist constrained to six decisions."
+                items={capabilityItems}
+                legend="Choose one or more approved capabilities."
+                onToggle={toggleCapability}
+                selectedValues={selectedCapabilities}
+              />
             </section>
-          ))}
-        </div>
-      </section>
+
+            <section className="screen-panel">
+              <div className="screen-panel__header">
+                <p className="screen-panel__eyebrow">Primary work area B</p>
+                <h3>Authentication choice</h3>
+                <p>
+                  Present direct and callback-driven connection paths as large
+                  cards before exposing any detailed fields in the next step.
+                </p>
+              </div>
+              <div className="option-grid">
+                {credentialOptions.map((option) => (
+                  <OptionCard
+                    key={option.value}
+                    description={option.description}
+                    meta={
+                      selectedCredential === option.value ? (
+                        <StatusBadge tone="success">Selected</StatusBadge>
+                      ) : (
+                        <StatusBadge tone="neutral">Available</StatusBadge>
+                      )
+                    }
+                    onSelect={() => setSelectedCredential(option.value)}
+                    selected={selectedCredential === option.value}
+                    title={option.label}
+                  />
+                ))}
+              </div>
+            </section>
+          </div>
+        }
+        aside={
+          <div className="screen-stack">
+            <section className="screen-panel" ref={reviewRef}>
+              <div className="screen-panel__header">
+                <p className="screen-panel__eyebrow">Context rail</p>
+                <h3>Review summary</h3>
+                <p>
+                  Keep the first-screen summary focused on scope, connection
+                  method, and what unlocks next.
+                </p>
+              </div>
+              <ReviewTable rows={reviewRows} />
+            </section>
+
+            <section className="screen-panel">
+              <div className="screen-panel__header">
+                <p className="screen-panel__eyebrow">What happens next</p>
+                <h3>Immediate downstream path</h3>
+              </div>
+              <ul className="helper-list">
+                <li>Connection details unlock only after scope is selected.</li>
+                <li>Broad capability sets stay in place and require policy review.</li>
+                <li>The review step confirms exact access before activation.</li>
+              </ul>
+            </section>
+
+            <section className="screen-panel">
+              <div className="screen-panel__header">
+                <p className="screen-panel__eyebrow">Layer 1 state coverage</p>
+                <h3>Feedback and control variants</h3>
+                <p>
+                  Keep loading, disabled, warning, success, and error treatments
+                  in shared primitives before protocol-specific cards arrive.
+                </p>
+              </div>
+              <div className="state-showcase">
+                <div className="badge-row">
+                  {stateBadgeTones.map((tone) => (
+                    <StatusBadge key={tone} tone={tone}>
+                      {tone[0].toUpperCase()}
+                      {tone.slice(1)}
+                    </StatusBadge>
+                  ))}
+                </div>
+                <InlineNotice
+                  action={
+                    <SecondaryButton variant="subtle">
+                      Review guidelines
+                    </SecondaryButton>
+                  }
+                  body="The shared error treatment is ready before protocol-specific payload contracts land."
+                  icon={<span aria-hidden="true">{getNoticeIcon("error")}</span>}
+                  title="Error handling stays inside the primitive layer"
+                  tone="error"
+                />
+                <div className="button-row">
+                  <PrimaryButton loading loadingLabel="Validating">
+                    Validate scope
+                  </PrimaryButton>
+                  <PrimaryButton disabled>Continue locked</PrimaryButton>
+                </div>
+              </div>
+            </section>
+          </div>
+        }
+        footer={
+          <div className="action-footer">
+            <div className="action-footer__copy">
+              <p className="action-footer__eyebrow">Action footer</p>
+              <strong>{helperState.title}</strong>
+              <p>{helperState.footer}</p>
+            </div>
+            <div className="action-footer__buttons">
+              <SecondaryButton
+                onClick={() =>
+                  reviewRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  })
+                }
+              >
+                Review requirements
+              </SecondaryButton>
+              <PrimaryButton disabled={!canContinue}>Continue</PrimaryButton>
+            </div>
+          </div>
+        }
+      />
     </main>
   );
 }

@@ -1,0 +1,19 @@
+{
+  "name": "@onboarding/design-tokens",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm run generate && pnpm exec tsc -p tsconfig.build.json",
+    "generate": "node ./scripts/generate.mjs",
+    "typecheck": "pnpm exec tsc -p tsconfig.build.json --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./src/tokens.css",
+    "./tokens.json": "./tokens.json"
+  }
+}

@@ -10,6 +10,8 @@ Use [`onboarding-screen-compositions.md`](./onboarding-screen-compositions.md)
 and [`onboarding-copy-source-of-truth.md`](./onboarding-copy-source-of-truth.md)
 alongside this note for the actual first-screen module assembly, action
 hierarchy, and locked v0 copy across AI agent, ERC-8004, and x402 entry flows.
+Use [`protocol-card-payload-contracts.md`](./protocol-card-payload-contracts.md)
+for the normalized Layer 3 protocol-card fixture and provider contracts.
 
 It stays within the current platform boundary from
 [`platform-foundation.md`](./platform-foundation.md): the web-first skeleton and
@@ -209,10 +211,10 @@ parts of implementation beyond the shared primitive layer:
 | Area | Risk | Owner path |
 | --- | --- | --- |
 | Workspace bootstrap | canonical remote is still missing, but the app skeleton and `pnpm` workspace are now present locally | existing platform work in [`platform-foundation.md`](./platform-foundation.md) and [CMP-13](/CMP/issues/CMP-13) |
-| Wallet integration | no agreed provider abstraction, connect lifecycle, or wrong-network contract | Product engineering plus CTO |
-| ERC-8004 metadata | signer summary and contract metadata payload shape undefined | Product engineering plus protocol owner |
-| x402 quotes | quote freshness, fee breakdown, and settlement callback payloads undefined | Product engineering plus protocol owner |
-| Credential scopes | capability grant shape for AI-agent onboarding not specified | Product engineering |
+| Wallet integration | repo-facing provider lifecycle and wrong-network contract now exist in [`protocol-card-payload-contracts.md`](./protocol-card-payload-contracts.md), but the live provider capability matrix still needs confirmation | Product engineering plus CTO |
+| ERC-8004 metadata | signer summary and contract metadata payloads are documented, but live verification-domain and transaction payload details still need protocol confirmation | Product engineering plus protocol owner |
+| x402 quotes | quote freshness, fee breakdown, and settlement callback payloads are documented, but transport-level verification semantics still need protocol confirmation | Product engineering plus protocol owner |
+| Credential scopes | fixture-ready capability grant shape is now documented, but final backend authority mapping still needs implementation confirmation | Product engineering |
 | Typography delivery | display and UI font loading strategy not yet chosen for runtime | Product engineering during token implementation |
 
 Recommended rule: do not block the token pipeline or shared primitives on these
