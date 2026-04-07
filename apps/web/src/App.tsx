@@ -224,207 +224,213 @@ export function App() {
     );
   }
 
+  const introPanel = (
+    <div className="app-page__intro">
+      <p className="app-page__eyebrow">Onboarding v0 reference screen</p>
+      <div className="app-page__intro-grid">
+        <div>
+          <h2>Shared primitives driving one real onboarding surface.</h2>
+          <p>
+            This reference composition uses semantic tokens and reusable Layer
+            1 and Layer 2 primitives instead of screen-local styling.
+          </p>
+        </div>
+        <dl className="runtime-card">
+          <div>
+            <dt>APP_ENV</dt>
+            <dd>{runtimeConfig.appEnv}</dd>
+          </div>
+          <div>
+            <dt>BASE_URL</dt>
+            <dd>{runtimeConfig.baseUrl}</dd>
+          </div>
+          <div>
+            <dt>API_BASE_URL</dt>
+            <dd>{runtimeConfig.apiBaseUrl}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  );
+
   return (
     <main className="app-page">
-      <div className="app-page__intro">
-        <p className="app-page__eyebrow">Onboarding v0 reference screen</p>
-        <div className="app-page__intro-grid">
-          <div>
-            <h2>Shared primitives driving one real onboarding surface.</h2>
-            <p>
-              This reference composition uses semantic tokens and reusable
-              Layer 1 and Layer 2 primitives instead of screen-local styling.
-            </p>
-          </div>
-          <dl className="runtime-card">
-            <div>
-              <dt>APP_ENV</dt>
-              <dd>{runtimeConfig.appEnv}</dd>
-            </div>
-            <div>
-              <dt>BASE_URL</dt>
-              <dd>{runtimeConfig.baseUrl}</dd>
-            </div>
-            <div>
-              <dt>API_BASE_URL</dt>
-              <dd>{runtimeConfig.apiBaseUrl}</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-
-      <AppShell
-        notice={
-          helperState.notice ? (
-            <InlineNotice
-              action={
+      <div className="app-page__shell">
+        <AppShell
+          notice={
+            helperState.notice ? (
+              <InlineNotice
+                action={
+                  <StatusBadge tone={helperState.badgeTone}>
+                    {helperState.badge}
+                  </StatusBadge>
+                }
+                body={helperState.notice.body}
+                icon={
+                  <span aria-hidden="true">
+                    {getNoticeIcon(helperState.notice.tone)}
+                  </span>
+                }
+                title={helperState.notice.title}
+                tone={helperState.notice.tone}
+              />
+            ) : undefined
+          }
+          header={
+            <SectionHeader
+              description="Select the jobs this agent should handle, then choose how it will connect. You'll review the exact access before activation."
+              statusSlot={
                 <StatusBadge tone={helperState.badgeTone}>
                   {helperState.badge}
                 </StatusBadge>
               }
-              body={helperState.notice.body}
-              icon={
-                <span aria-hidden="true">
-                  {getNoticeIcon(helperState.notice.tone)}
-                </span>
-              }
-              title={helperState.notice.title}
-              tone={helperState.notice.tone}
+              stepLabel="Step 1 of 3"
+              title="Choose what this agent can do."
             />
-          ) : undefined
-        }
-        header={
-          <SectionHeader
-            description="Select the jobs this agent should handle, then choose how it will connect. You'll review the exact access before activation."
-            statusSlot={
-              <StatusBadge tone={helperState.badgeTone}>
-                {helperState.badge}
-              </StatusBadge>
-            }
-            stepLabel="Step 1 of 3"
-            title="Choose what this agent can do."
-          />
-        }
-        progress={<StepRail steps={stepItems} />}
-        main={
-          <div className="screen-stack">
-            <section className="screen-panel">
-              <div className="screen-panel__header">
-                <p className="screen-panel__eyebrow">Primary work area A</p>
-                <h3>Capability selection</h3>
-                <p>
-                  Start with the jobs this agent should be allowed to perform.
-                  Keep the first pass focused and add broader access only when
-                  it is operationally necessary.
-                </p>
-              </div>
-              <ChecklistGroup
-                description="Hide unsupported options instead of relabeling them. This starter pass keeps the checklist constrained to six decisions."
-                items={capabilityItems}
-                legend="Choose one or more approved capabilities."
-                onToggle={toggleCapability}
-                selectedValues={selectedCapabilities}
-              />
-            </section>
+          }
+          progress={<StepRail steps={stepItems} />}
+          main={
+            <div className="screen-stack">
+              <section className="screen-panel">
+                <div className="screen-panel__header">
+                  <p className="screen-panel__eyebrow">Primary work area A</p>
+                  <h3>Capability selection</h3>
+                  <p>
+                    Start with the jobs this agent should be allowed to perform.
+                    Keep the first pass focused and add broader access only when
+                    it is operationally necessary.
+                  </p>
+                </div>
+                <ChecklistGroup
+                  description="Hide unsupported options instead of relabeling them. This starter pass keeps the checklist constrained to six decisions."
+                  items={capabilityItems}
+                  legend="Choose one or more approved capabilities."
+                  onToggle={toggleCapability}
+                  selectedValues={selectedCapabilities}
+                />
+              </section>
 
-            <section className="screen-panel">
-              <div className="screen-panel__header">
-                <p className="screen-panel__eyebrow">Primary work area B</p>
-                <h3>Authentication choice</h3>
-                <p>
-                  Present direct and callback-driven connection paths as large
-                  cards before exposing any detailed fields in the next step.
-                </p>
-              </div>
-              <div className="option-grid">
-                {credentialOptions.map((option) => (
-                  <OptionCard
-                    key={option.value}
-                    description={option.description}
-                    meta={
-                      selectedCredential === option.value ? (
-                        <StatusBadge tone="success">Selected</StatusBadge>
-                      ) : (
-                        <StatusBadge tone="neutral">Available</StatusBadge>
-                      )
-                    }
-                    onSelect={() => setSelectedCredential(option.value)}
-                    selected={selectedCredential === option.value}
-                    title={option.label}
-                  />
-                ))}
-              </div>
-            </section>
-          </div>
-        }
-        aside={
-          <div className="screen-stack">
-            <section className="screen-panel" ref={reviewRef}>
-              <div className="screen-panel__header">
-                <p className="screen-panel__eyebrow">Context rail</p>
-                <h3>Review summary</h3>
-                <p>
-                  Keep the first-screen summary focused on scope, connection
-                  method, and what unlocks next.
-                </p>
-              </div>
-              <ReviewTable rows={reviewRows} />
-            </section>
-
-            <section className="screen-panel">
-              <div className="screen-panel__header">
-                <p className="screen-panel__eyebrow">What happens next</p>
-                <h3>Immediate downstream path</h3>
-              </div>
-              <ul className="helper-list">
-                <li>Connection details unlock only after scope is selected.</li>
-                <li>Broad capability sets stay in place and require policy review.</li>
-                <li>The review step confirms exact access before activation.</li>
-              </ul>
-            </section>
-
-            <section className="screen-panel">
-              <div className="screen-panel__header">
-                <p className="screen-panel__eyebrow">Layer 1 state coverage</p>
-                <h3>Feedback and control variants</h3>
-                <p>
-                  Keep loading, disabled, warning, success, and error treatments
-                  in shared primitives before protocol-specific cards arrive.
-                </p>
-              </div>
-              <div className="state-showcase">
-                <div className="badge-row">
-                  {stateBadgeTones.map((tone) => (
-                    <StatusBadge key={tone} tone={tone}>
-                      {tone[0].toUpperCase()}
-                      {tone.slice(1)}
-                    </StatusBadge>
+              <section className="screen-panel">
+                <div className="screen-panel__header">
+                  <p className="screen-panel__eyebrow">Primary work area B</p>
+                  <h3>Authentication choice</h3>
+                  <p>
+                    Present direct and callback-driven connection paths as large
+                    cards before exposing any detailed fields in the next step.
+                  </p>
+                </div>
+                <div className="option-grid">
+                  {credentialOptions.map((option) => (
+                    <OptionCard
+                      key={option.value}
+                      description={option.description}
+                      meta={
+                        selectedCredential === option.value ? (
+                          <StatusBadge tone="success">Selected</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="neutral">Available</StatusBadge>
+                        )
+                      }
+                      onSelect={() => setSelectedCredential(option.value)}
+                      selected={selectedCredential === option.value}
+                      title={option.label}
+                    />
                   ))}
                 </div>
-                <InlineNotice
-                  action={
-                    <SecondaryButton variant="subtle">
-                      Review guidelines
-                    </SecondaryButton>
-                  }
-                  body="The shared error treatment is ready before protocol-specific payload contracts land."
-                  icon={<span aria-hidden="true">{getNoticeIcon("error")}</span>}
-                  title="Error handling stays inside the primitive layer"
-                  tone="error"
-                />
-                <div className="button-row">
-                  <PrimaryButton loading loadingLabel="Validating">
-                    Validate scope
-                  </PrimaryButton>
-                  <PrimaryButton disabled>Continue locked</PrimaryButton>
+              </section>
+            </div>
+          }
+          aside={
+            <div className="screen-stack">
+              <section className="screen-panel" ref={reviewRef}>
+                <div className="screen-panel__header">
+                  <p className="screen-panel__eyebrow">Context rail</p>
+                  <h3>Review summary</h3>
+                  <p>
+                    Keep the first-screen summary focused on scope, connection
+                    method, and what unlocks next.
+                  </p>
                 </div>
+                <ReviewTable rows={reviewRows} />
+              </section>
+
+              <section className="screen-panel">
+                <div className="screen-panel__header">
+                  <p className="screen-panel__eyebrow">What happens next</p>
+                  <h3>Immediate downstream path</h3>
+                </div>
+                <ul className="helper-list">
+                  <li>Connection details unlock only after scope is selected.</li>
+                  <li>Broad capability sets stay in place and require policy review.</li>
+                  <li>The review step confirms exact access before activation.</li>
+                </ul>
+              </section>
+
+              <section className="screen-panel">
+                <div className="screen-panel__header">
+                  <p className="screen-panel__eyebrow">Layer 1 state coverage</p>
+                  <h3>Feedback and control variants</h3>
+                  <p>
+                    Keep loading, disabled, warning, success, and error
+                    treatments in shared primitives before protocol-specific
+                    cards arrive.
+                  </p>
+                </div>
+                <div className="state-showcase">
+                  <div className="badge-row">
+                    {stateBadgeTones.map((tone) => (
+                      <StatusBadge key={tone} tone={tone}>
+                        {tone[0].toUpperCase()}
+                        {tone.slice(1)}
+                      </StatusBadge>
+                    ))}
+                  </div>
+                  <InlineNotice
+                    action={
+                      <SecondaryButton variant="subtle">
+                        Review guidelines
+                      </SecondaryButton>
+                    }
+                    body="The shared error treatment is ready before protocol-specific payload contracts land."
+                    icon={<span aria-hidden="true">{getNoticeIcon("error")}</span>}
+                    title="Error handling stays inside the primitive layer"
+                    tone="error"
+                  />
+                  <div className="button-row">
+                    <PrimaryButton loading loadingLabel="Validating">
+                      Validate scope
+                    </PrimaryButton>
+                    <PrimaryButton disabled>Continue locked</PrimaryButton>
+                  </div>
+                </div>
+              </section>
+            </div>
+          }
+          footer={
+            <div className="action-footer">
+              <div className="action-footer__copy">
+                <p className="action-footer__eyebrow">Action footer</p>
+                <strong>{helperState.title}</strong>
+                <p>{helperState.footer}</p>
               </div>
-            </section>
-          </div>
-        }
-        footer={
-          <div className="action-footer">
-            <div className="action-footer__copy">
-              <p className="action-footer__eyebrow">Action footer</p>
-              <strong>{helperState.title}</strong>
-              <p>{helperState.footer}</p>
+              <div className="action-footer__buttons">
+                <SecondaryButton
+                  onClick={() =>
+                    reviewRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                >
+                  Review requirements
+                </SecondaryButton>
+                <PrimaryButton disabled={!canContinue}>Continue</PrimaryButton>
+              </div>
             </div>
-            <div className="action-footer__buttons">
-              <SecondaryButton
-                onClick={() =>
-                  reviewRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                  })
-                }
-              >
-                Review requirements
-              </SecondaryButton>
-              <PrimaryButton disabled={!canContinue}>Continue</PrimaryButton>
-            </div>
-          </div>
-        }
-      />
+          }
+        />
+      </div>
+      {introPanel}
     </main>
   );
 }
