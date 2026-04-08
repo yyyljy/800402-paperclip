@@ -1,0 +1,1 @@
+window.__ONBOARDING_RUNTIME_CONFIG__ = window.__ONBOARDING_RUNTIME_CONFIG__ || {};

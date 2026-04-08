@@ -6,7 +6,8 @@ the platform baseline.
 Current state:
 
 - local git repository initialized on `main`
-- no canonical remote repository attached yet
+- canonical GitHub remote is attached at `https://github.com/yyyljy/800402-paperclip.git`
+- `main` is the verified default branch for release promotion
 - repository baseline scaffolding for CI, environment contracts, and secrets now lives in this workspace
 - `pnpm` workspace root is active
 - `apps/web` is the first runnable application surface
@@ -35,6 +36,6 @@ Local commands:
 
 Immediate next step:
 
-- attach or create the canonical remote repository tracked in [CMP-16](/CMP/issues/CMP-16)
+- choose the first deployment substrate plus secrets and observability vendors so staging and production wiring can start before `api`, `worker`, or `protocol-adapter` land
 - expand the shared primitives into the remaining onboarding flows and protocol-specific cards once payload contracts are stable
 - use `docs/onboarding-screen-compositions.md` for screen assembly, `docs/onboarding-copy-source-of-truth.md` for locked first-screen copy, and `docs/design-system-engineering-intake.md` for token and primitive implementation intake
