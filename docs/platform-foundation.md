@@ -6,15 +6,18 @@
 - A local git repository now exists so follow-on work has a stable root.
 - Repository-local baseline files now define CI, environment, secret, and release-control scaffolding.
 - A web-first `pnpm` workspace skeleton now exists locally under `apps/web`.
-- No canonical remote repository or deployment target is attached yet.
+- The canonical upstream remote is attached at `https://github.com/yyyljy/800402-paperclip.git`.
+- `main` is the verified default branch for release promotion.
+- No deployment target, secrets backend, or observability vendor is attached yet.
 
 ## Recommended Bootstrap Path
 
-1. Keep this repository as the managed working root and attach a canonical remote as soon as the CTO decides where ownership lives.
+1. Keep this repository and the current GitHub remote as the managed source of truth for MVP delivery.
 2. Use the landed web-first workspace skeleton before building stack-specific automation.
-3. Add CI, secrets wiring, deployment configuration, and observability as shared platform layers instead of baking them into the first app service.
+3. Choose one deployment substrate, one secrets backend, and one observability stack before the first server-side service lands.
+4. Add CI, secrets wiring, deployment configuration, and observability as shared platform layers instead of baking them into the first app service.
 
-The missing canonical remote is the main blocker for production-grade CI/CD because branch protections, deployment identities, and merge-based release automation need an upstream source of truth.
+The canonical remote and protected default-branch assumption are now in place. The remaining blocker for production-grade delivery is the missing runtime control plane: deployment target, secret storage, and observability backend.
 
 ## Minimum Environment Model
 
@@ -98,5 +101,7 @@ UX scope stays outside this document.
 
 ## Next Executable Tasks
 
-1. Attach or create the canonical remote repository and connect it to this managed workspace.
-2. Land `packages/design-tokens` and `packages/ui-primitives` against the web-first skeleton so the baseline CI can tighten from repo-hygiene checks to service-specific verification.
+1. Choose the first deployment substrate and runtime ownership model for `staging` and `production`.
+2. Choose the first secrets backend and observability vendor so `web`, `api`, `worker`, and `protocol-adapter` can inherit one shared platform contract.
+3. Land `packages/design-tokens` and `packages/ui-primitives` against the web-first skeleton so the baseline CI can tighten from repo-hygiene checks to service-specific verification.
+4. Add service-specific deploy and smoke gates only when `api`, `worker`, or `protocol-adapter` become real runtime surfaces.
