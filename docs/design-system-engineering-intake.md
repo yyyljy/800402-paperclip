@@ -15,8 +15,9 @@ for the normalized Layer 3 protocol-card fixture and provider contracts.
 
 It stays within the current platform boundary from
 [`platform-foundation.md`](./platform-foundation.md): the web-first skeleton and
-CI baseline now exist locally, but the canonical remote repository is still
-pending. The package paths below are the active landing shape for the next
+CI baseline now exist locally, and the canonical GitHub remote is attached, but
+the deployment, secrets, and observability stack is still undecided. The
+package paths below are the active landing shape for the next
 implementation slice, not a hypothetical bootstrap path anymore.
 
 ## Source Of Truth And Package Shape
@@ -210,9 +211,9 @@ parts of implementation beyond the shared primitive layer:
 
 | Area | Risk | Owner path |
 | --- | --- | --- |
-| Workspace bootstrap | canonical remote is still missing, but the app skeleton and `pnpm` workspace are now present locally | existing platform work in [`platform-foundation.md`](./platform-foundation.md) and [CMP-13](/CMP/issues/CMP-13) |
-| Wallet integration | repo-facing provider lifecycle and wrong-network contract now exist in [`protocol-card-payload-contracts.md`](./protocol-card-payload-contracts.md), but the live provider capability matrix still needs confirmation | Product engineering plus CTO |
-| ERC-8004 metadata | signer summary and contract metadata payloads are documented, but live verification-domain and transaction payload details still need protocol confirmation | Product engineering plus protocol owner |
+| Workspace bootstrap | canonical remote and protected `main` branch are in place, but deployment substrate, secrets backend, and observability vendor are still undecided | existing platform work in [`platform-foundation.md`](./platform-foundation.md) and [`mvp-platform-readiness.md`](./mvp-platform-readiness.md) |
+| Wallet integration | day-one provider behavior is now fixed in [`protocol-card-payload-contracts.md`](./protocol-card-payload-contracts.md): MetaMask supports dapp-side network switching, Coinbase Wallet supports switching only on already enabled networks, WalletConnect defaults to manual reconnect unless the connected wallet proves switch support, and embedded wallets remain out of MVP scope | Product engineering implementation with CTO escalation only if the provider set changes |
+| ERC-8004 metadata | signer summary and contract metadata payloads are documented, and the ownership boundary is fixed: `apps/web` owns readiness UX while canonical verification-domain and request payload construction belong to a future server or `apps/protocol-adapter` boundary; final domain fields still need protocol confirmation | Product engineering plus protocol owner |
 | x402 quotes | quote freshness, fee breakdown, and settlement callback payloads are documented, but transport-level verification semantics still need protocol confirmation | Product engineering plus protocol owner |
 | Credential scopes | fixture-ready capability grant shape is now documented, but final backend authority mapping still needs implementation confirmation | Product engineering |
 | Typography delivery | display and UI font loading strategy not yet chosen for runtime | Product engineering during token implementation |

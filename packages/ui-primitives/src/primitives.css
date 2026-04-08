@@ -13,14 +13,19 @@
 .ds-field__control,
 .ds-review-table__row {
   border: 1px solid var(--ds-color-border-subtle);
-  background: rgba(255, 253, 248, 0.9);
+  background: var(--ds-color-bg-surface);
   box-shadow: var(--ds-shadow-card);
-  backdrop-filter: blur(16px);
 }
 
 .ds-shell__frame {
   border-radius: var(--ds-radius-lg);
   overflow: clip;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ds-color-bg-surface) 92%, white 8%) 0%,
+      var(--ds-color-bg-surface) 100%
+    );
 }
 
 .ds-shell__top,
@@ -51,8 +56,7 @@
   bottom: 0;
   z-index: 20;
   border-top: 1px solid var(--ds-color-border-subtle);
-  background: rgba(252, 250, 245, 0.94);
-  backdrop-filter: blur(20px);
+  background: color-mix(in srgb, var(--ds-color-bg-surface) 94%, white 6%);
 }
 
 .ds-option-card,
@@ -115,6 +119,11 @@
   gap: var(--ds-space-4);
   padding: var(--ds-space-4);
   border-radius: var(--ds-radius-md);
+  background: color-mix(
+    in srgb,
+    var(--ds-color-bg-accent-wash) 26%,
+    var(--ds-color-bg-surface) 74%
+  );
 }
 
 .ds-step-rail__heading {
@@ -356,7 +365,7 @@
   height: 2.25rem;
   border-radius: 50%;
   font-weight: var(--ds-font-weight-bold);
-  background: rgba(255, 253, 248, 0.72);
+  background: color-mix(in srgb, var(--ds-color-bg-elevated) 92%, white 8%);
 }
 
 .ds-inline-notice__copy {
@@ -474,7 +483,11 @@
   padding: var(--ds-space-1);
   border: 1px solid var(--ds-color-border-subtle);
   border-radius: var(--ds-radius-pill);
-  background: rgba(252, 250, 245, 0.8);
+  background: color-mix(
+    in srgb,
+    var(--ds-color-bg-elevated) 70%,
+    var(--ds-color-bg-accent-wash) 30%
+  );
 }
 
 .ds-segmented__button {

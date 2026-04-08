@@ -244,7 +244,7 @@ There is no blocker for design-system direction.
 
 Current constraints that affect implementation timing but do not block design work:
 
-- no canonical remote repository yet
+- canonical remote now exists, but the deployment, secrets, and observability stack is still undecided
 - web-first application skeleton now exists locally, but package implementation is still pending
 - exact wallet, contract, and payment provider payload shapes are still pending
   engineering definition

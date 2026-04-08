@@ -94,8 +94,8 @@ export const themes = {
       "pill": "999px"
     },
     "shadow": {
-      "card": "0 24px 60px rgba(19, 32, 43, 0.08)",
-      "raised": "0 12px 32px rgba(19, 32, 43, 0.12)"
+      "card": "0 14px 32px rgba(19, 32, 43, 0.07)",
+      "raised": "0 8px 20px rgba(19, 32, 43, 0.12)"
     },
     "motion": {
       "base": "180ms ease",
