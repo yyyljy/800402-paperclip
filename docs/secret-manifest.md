@@ -22,6 +22,18 @@ Each secret entry should declare:
 - Product Engineering requests new secrets by updating the manifest and documenting the consuming service.
 - QA may request staging-only test credentials but should not own production material.
 - Treasury-impacting or signing secrets must be isolated to the narrowest runtime that needs them.
+- Google Secret Manager is the source of truth for deployed runtime secrets; GitHub stores only non-secret deployment metadata and identity bindings.
+
+## Delivery Rules
+
+- `runtime_env` is reserved for non-secret configuration or for values injected
+  from Secret Manager by the runtime platform.
+- `secret_manager_ref` is the default delivery mode for anything sensitive in
+  `staging` or `production`.
+- `OBSERVABILITY_DSN` maps to the per-runtime Sentry DSN and should be stored in
+  Secret Manager even though it is lower risk than signer or settlement secrets.
+- `WALLET_*`, `SIGNER_*`, webhook, and settlement secrets must only be attached
+  to the `protocol-adapter` runtime in production.
 
 ## Initial Classes
 

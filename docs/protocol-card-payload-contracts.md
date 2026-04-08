@@ -174,6 +174,21 @@ interface WalletConnectionCardModel {
   change. If not, surface a `reconnect` action and explain the manual step in
   `statusMessage`.
 
+### MVP Wallet Decision
+
+- Day-one supported providers are `metamask`, `coinbase`, and
+  `walletconnect`.
+- `metamask` may expose `switch_network` because MetaMask supports per-dapp
+  network switching when the target network is enabled for the connected dapp.
+- `coinbase` may expose `switch_network` only for networks already enabled in
+  Coinbase Wallet. Custom or test networks that are not already enabled must
+  fall back to a manual reconnect or wallet-side network activation path.
+- `walletconnect` should default to `reconnect` on wrong-network states. Only
+  expose `switch_network` when the connected wallet explicitly proves that
+  wallet-side chain switching is supported for the active session.
+- `embedded` remains `unavailable` for the MVP until a specific embedded wallet
+  vendor, network policy, and signing boundary are chosen.
+
 ## ERC-8004 Contract Metadata
 
 The ERC-8004 screens need a signer summary plus the smallest contract metadata
@@ -220,6 +235,21 @@ interface ERC8004RequestContext {
 - keep raw calldata, ABI fragments, and provider-specific signing payloads out
   of this card-facing contract; those belong in adapter or transaction-layer
   types.
+
+### MVP Ownership Boundary
+
+- `apps/web` owns wallet-readiness UX only: connected account state, expected
+  versus active chain comparison, signer readability, provider capability
+  flags, and the step-1 action model derived from normalized provider state.
+- `apps/web` may keep fixture-backed assumptions for the current preview flow,
+  including expected chain selection, explanatory copy, placeholder contract
+  metadata, and the provider matrix above while no live signing adapter exists.
+- Canonical ERC-8004 verification-domain construction, signing-method
+  selection, request hashing, and any calldata or contract-call payload shaping
+  belong in a future server-side boundary such as `apps/protocol-adapter`.
+- Browser clients must consume normalized `ERC8004RequestContext` payloads and
+  must not treat locally assembled verification-domain or signing payload data
+  as authoritative once live adapters exist.
 
 ## x402 Quote And Settlement Contracts
 
@@ -332,6 +362,26 @@ interface X402CheckoutContext {
   - `success` when callback verification is complete and settlement is
     confirmed or no longer blocking
   - `failed` when callback verification or settlement reaches a terminal failure
+
+### MVP Runtime Decision
+
+- Day-one x402 callback verification uses `hmac_sha256` with a shared
+  `X402_WEBHOOK_SECRET`; automatic callback settlement should not ship against
+  `none` or `unknown` verification modes.
+- `apps/web` may show quote readiness and a non-terminal callback `pending`
+  state so the user can continue through configuration, but it must not present
+  terminal settlement success until callback verification is `verified` and
+  settlement is `settled` or otherwise explicitly no longer blocking.
+- Callback receipt, HMAC verification, settlement reconciliation, and callback
+  status persistence belong in `apps/protocol-adapter`, not in `apps/web`.
+  Browser clients consume the normalized `X402CheckoutContext` only.
+- `X402_WEBHOOK_SECRET`, any settlement secret, and production wallet or signer
+  material stay isolated to the `protocol-adapter` runtime per
+  `docs/environment-contract.md`, `docs/secret-manifest.md`, and
+  `docs/mvp-platform-readiness.md`.
+- Emit structured logs and alerts with request, workflow, and transaction
+  correlation IDs for callback delivery, verification failure, and settlement
+  timeout paths so `pending` versus `failed` states are observable.
 
 ## AI-Agent Credential Scope Contract
 
@@ -581,7 +631,3 @@ const x402StaleQuoteFixture: X402CheckoutContext = {
 
 - confirm the final ERC-8004 verification-domain fields and signature method
   requirements before any live signing adapter is built
-- confirm which wallet providers must support programmatic network switching
-  versus manual reconnect on day one
-- confirm the x402 callback verification method and whether settlement success
-  can be shown before the verification channel reaches a terminal state

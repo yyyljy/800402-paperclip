@@ -1,0 +1,15 @@
+.git
+.github
+.omx
+node_modules
+apps/web/node_modules
+packages/design-tokens/node_modules
+packages/ui-primitives/node_modules
+apps/web/dist
+packages/design-tokens/dist
+packages/ui-primitives/dist
+coverage
+test-results
+tmp
+.tmp
+*.log

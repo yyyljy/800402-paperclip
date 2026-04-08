@@ -1,0 +1,168 @@
+name: Runtime Control Plane
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: runtime-control-plane-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: web
+
+jobs:
+  build-and-publish:
+    name: Build And Publish Web Image
+    runs-on: ubuntu-latest
+    outputs:
+      image_ref: ${{ steps.image.outputs.image_ref }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_GITHUB_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker "${{ vars.GCP_ARTIFACT_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push immutable image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ vars.GCP_ARTIFACT_REGION }}-docker.pkg.dev/${{ vars.GCP_ARTIFACT_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Capture image digest reference
+        id: image
+        run: |
+          image_ref="${{ vars.GCP_ARTIFACT_REGION }}-docker.pkg.dev/${{ vars.GCP_ARTIFACT_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+          echo "image_ref=${image_ref}" >> "${GITHUB_OUTPUT}"
+
+  deploy-staging:
+    name: Deploy Staging
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    environment: staging
+    outputs:
+      service_url: ${{ steps.deploy.outputs.service_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_GITHUB_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy web to staging
+        id: deploy
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          APP_ENV: staging
+          CLOUD_RUN_REGION: ${{ vars.CLOUD_RUN_REGION }}
+          CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+          CLOUD_RUN_SERVICE_WEB: ${{ vars.CLOUD_RUN_SERVICE_WEB }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          IMAGE_REF: ${{ needs.build-and-publish.outputs.image_ref }}
+          OBSERVABILITY_DSN_SECRET_NAME: ${{ vars.OBSERVABILITY_DSN_SECRET_NAME }}
+          WEB_BASE_URL: ${{ vars.WEB_BASE_URL }}
+        run: |
+          args=(
+            run deploy "${CLOUD_RUN_SERVICE_WEB}"
+            --project "${GCP_PROJECT_ID}"
+            --region "${CLOUD_RUN_REGION}"
+            --image "${IMAGE_REF}"
+            --service-account "${CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT}"
+            --allow-unauthenticated
+            --quiet
+            --set-env-vars "APP_ENV=${APP_ENV},APP_NAME=onboarding,BASE_URL=${WEB_BASE_URL},API_BASE_URL=${API_BASE_URL}"
+          )
+
+          if [[ -n "${OBSERVABILITY_DSN_SECRET_NAME}" ]]; then
+            args+=(--update-secrets "OBSERVABILITY_DSN=${OBSERVABILITY_DSN_SECRET_NAME}:latest")
+          fi
+
+          gcloud "${args[@]}"
+
+          service_url="$(
+            gcloud run services describe "${CLOUD_RUN_SERVICE_WEB}" \
+              --project "${GCP_PROJECT_ID}" \
+              --region "${CLOUD_RUN_REGION}" \
+              --format='value(status.url)'
+          )"
+
+          echo "service_url=${service_url}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run staging smoke checks
+        env:
+          EXPECTED_APP_ENV: staging
+          SERVICE_URL: ${{ steps.deploy.outputs.service_url }}
+        run: bash scripts/release/smoke-web-release.sh "${SERVICE_URL}" "${EXPECTED_APP_ENV}"
+
+  deploy-production:
+    name: Promote Production
+    needs:
+      - build-and-publish
+      - deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_GITHUB_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy web to production
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          APP_ENV: production
+          CLOUD_RUN_REGION: ${{ vars.CLOUD_RUN_REGION }}
+          CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+          CLOUD_RUN_SERVICE_WEB: ${{ vars.CLOUD_RUN_SERVICE_WEB }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          IMAGE_REF: ${{ needs.build-and-publish.outputs.image_ref }}
+          OBSERVABILITY_DSN_SECRET_NAME: ${{ vars.OBSERVABILITY_DSN_SECRET_NAME }}
+          WEB_BASE_URL: ${{ vars.WEB_BASE_URL }}
+        run: |
+          args=(
+            run deploy "${CLOUD_RUN_SERVICE_WEB}"
+            --project "${GCP_PROJECT_ID}"
+            --region "${CLOUD_RUN_REGION}"
+            --image "${IMAGE_REF}"
+            --service-account "${CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT}"
+            --allow-unauthenticated
+            --quiet
+            --set-env-vars "APP_ENV=${APP_ENV},APP_NAME=onboarding,BASE_URL=${WEB_BASE_URL},API_BASE_URL=${API_BASE_URL}"
+          )
+
+          if [[ -n "${OBSERVABILITY_DSN_SECRET_NAME}" ]]; then
+            args+=(--update-secrets "OBSERVABILITY_DSN=${OBSERVABILITY_DSN_SECRET_NAME}:latest")
+          fi
+
+          gcloud "${args[@]}"
